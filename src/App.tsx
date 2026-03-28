@@ -1,24 +1,36 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import Layout from "@/components/Layout";
+import Index from "./pages/Index";
+import OverOns from "./pages/OverOns";
+import Diensten from "./pages/Diensten";
+import BOrganized from "./pages/BOrganized";
+import Bestellingen from "./pages/Bestellingen";
+import Nieuws from "./pages/Nieuws";
+import Contact from "./pages/Contact";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/over-ons" element={<OverOns />} />
+            <Route path="/diensten" element={<Diensten />} />
+            <Route path="/b-organized" element={<BOrganized />} />
+            <Route path="/bestellingen" element={<Bestellingen />} />
+            <Route path="/nieuws" element={<Nieuws />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
