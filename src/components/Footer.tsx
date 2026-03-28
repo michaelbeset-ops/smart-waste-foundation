@@ -84,10 +84,18 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-primary-foreground/10 mt-12 pt-8 text-center">
+        <div className="border-t border-primary-foreground/10 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-primary-foreground/50">
             © {new Date().getFullYear()} B-Advice. Alle rechten voorbehouden.
           </p>
+          <div className="flex gap-4">
+            <Link to="/privacybeleid" className="text-xs text-primary-foreground/50 hover:text-accent transition-colors">
+              Privacybeleid
+            </Link>
+            <Link to="/cookiebeleid" className="text-xs text-primary-foreground/50 hover:text-accent transition-colors">
+              Cookiebeleid
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
