@@ -11,6 +11,9 @@ import Bestellingen from "./pages/Bestellingen";
 import Nieuws from "./pages/Nieuws";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import Privacybeleid from "./pages/Privacybeleid";
+import Cookiebeleid from "./pages/Cookiebeleid";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
