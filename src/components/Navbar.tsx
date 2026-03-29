@@ -36,6 +36,7 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
+          <img src="/logo.svg" alt="B-Advice logo" className="h-9 w-9" />
           <span className="font-heading text-2xl font-bold text-primary-foreground tracking-tight">
             B-Advice
           </span>
