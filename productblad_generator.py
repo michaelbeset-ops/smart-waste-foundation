@@ -257,6 +257,30 @@ class ProductbladGenerator:
         self.dlg.spinBox_11.setValue(0)
         self.dlg.spinBox_12.setValue(0)
 
+    def _add_image_to_range(self, sheet, img_path, from_cell, to_cell):
+        """Plaatst een afbeelding zodat deze precies de opgegeven celregio vult."""
+        from openpyxl.drawing.spreadsheet_drawing import TwoCellAnchor, AnchorMarker
+        from openpyxl.utils import column_index_from_string
+        import re
+
+        def parse_cell(ref):
+            m = re.match(r'([A-Z]+)(\d+)', ref.upper())
+            col = column_index_from_string(m.group(1)) - 1  # 0-gebaseerd
+            row = int(m.group(2)) - 1                       # 0-gebaseerd
+            return col, row
+
+        fc, fr = parse_cell(from_cell)
+        tc, tr = parse_cell(to_cell)
+
+        anchor = TwoCellAnchor()
+        anchor._from = AnchorMarker(col=fc, colOff=0, row=fr, rowOff=0)
+        anchor.to    = AnchorMarker(col=tc, colOff=0, row=tr, rowOff=0)
+        anchor.editAs = 'oneCell'
+
+        img = Image(img_path)
+        img.anchor = anchor
+        sheet.add_image(img)
+
     def createExcel(self):
         if(self.dlg.checkBox.isChecked()):
             screenshot_names = ['Kaart', 'Kadaster', 'Luchtfoto', 'GPS', 'Locatiefoto', 'Loopafstand']
@@ -327,34 +351,37 @@ class ProductbladGenerator:
         general_sheet.add_data_validation(data_validation)
         data_validation.add("B33")
 
+        general_sheet['B31'] = 'Hoogbouw in orde'
+
         deps = f"{self.file_location}\\Dependencies"
-        # Afbeeldingen op naam laden zodat volgorde altijd klopt en Logo.png niet mee wordt genomen
-        screenshot_to_cell = {
-            'GPS':         'A68',
-            'Kadaster':    'A94',
-            'Kaart':       'A120',
-            'Locatiefoto': 'A201',
-            'Luchtfoto':   'A230',
-            'Loopafstand': 'A266',
+
+        # Afbeeldingen gekoppeld aan exacte celregio's (van-cel, tot-cel)
+        screenshot_to_range = {
+            'Locatiefoto': ('A68',  'H92'),   # Google Maps uitsnede locatie
+            'Kaart':       ('A94',  'H118'),  # BAGviewer uitsnede
+            'GPS':         ('A120', 'F130'),  # GPS coördinaten locatie
+            'Loopafstand': ('A201', 'H228'),  # Maximale loopafstand
+            'Kadaster':    ('A230', 'H255'),  # PDOK kadastrale kaart
+            'Luchtfoto':   ('A267', 'H326'),  # AWB kaart Google Maps
         }
-        for name, cell in screenshot_to_cell.items():
+        for name, (from_cell, to_cell) in screenshot_to_range.items():
             img_path = f"{deps}\\{name}.png"
             if os.path.exists(img_path):
-                general_sheet.add_image(Image(img_path), cell)
+                self._add_image_to_range(general_sheet, img_path, from_cell, to_cell)
             else:
                 print(f'Afbeelding niet gevonden: {img_path}')
 
         # Optionele extra locatiefoto's (niet de vaste screenshots of Logo.png)
-        vaste_namen = set(screenshot_to_cell.keys()) | {'Logo', 'TransLogo'}
+        vaste_namen = set(screenshot_to_range.keys()) | {'Logo', 'TransLogo'}
         extra = sorted([
             f for f in os.listdir(deps)
             if (f.endswith('.png') or f.endswith('.PNG'))
             and os.path.splitext(f)[0] not in vaste_namen
         ])
         if len(extra) >= 1:
-            general_sheet.add_image(Image(f"{deps}\\{extra[0]}"), 'A53')
+            self._add_image_to_range(general_sheet, f"{deps}\\{extra[0]}", 'A53', 'D65')
         if len(extra) >= 2:
-            general_sheet.add_image(Image(f"{deps}\\{extra[1]}"), 'E53')
+            self._add_image_to_range(general_sheet, f"{deps}\\{extra[1]}", 'E53', 'H65')
 
         workbook.save(f"{self.file_location}\\Dependencies\\{self.location_code}.xlsm")
         app = xw.App(visible=False)
