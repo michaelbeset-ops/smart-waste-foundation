@@ -221,16 +221,18 @@ class ProductbladGenerator:
         target_coordinates = self.dlg.lineEdit_5.text()
 
         global web_driver
-        web_driver = web.WebDriver(chrome_driver, f"https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery={target_address}&theme=BRT%20Achtergrond&geometry.x=160000&geometry.y=455000&zoomlevel=3")
-        web_driver.new_tab("https://app.pdok.nl/viewer/")
+        # Vereenvoudigde URL zonder geometry/zoomlevel parameters zodat BAGviewer zelf correct inzoomt
+        web_driver = web.WebDriver(chrome_driver, f"https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery={target_address}")
+        time.sleep(4)  # Extra wachttijd zodat kaart volledig laadt
+        web_driver.new_tab("https://app.pdok.nl/viewer/", extra_wait=2.0)
         web_driver.new_search("ggcSearchInputId", target_address)
         self.google_url = f"https://www.google.nl/maps/place/{target_address}/data=!3m1!1e3"
-        web_driver.new_tab(self.google_url)
-        web_driver.new_tab('https://www.gpscoordinaten.nl/converteer-gps-coordinaten.php')
+        web_driver.new_tab(self.google_url, extra_wait=2.0)
+        web_driver.new_tab('https://www.gpscoordinaten.nl/converteer-gps-coordinaten.php', extra_wait=1.5)
         web_driver.new_search("a-latlong", target_coordinates)
         joined_coordinates = target_coordinates.replace(" ", "")
-        web_driver.new_tab(f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={joined_coordinates}")
-        web_driver.new_tab('https://afstandmeten.nl/')
+        web_driver.new_tab(f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={joined_coordinates}", extra_wait=2.0)
+        web_driver.new_tab('https://afstandmeten.nl/', extra_wait=2.0)
         web_driver.new_search("qId", target_address)
 
     def clearEntries(self):
@@ -257,15 +259,13 @@ class ProductbladGenerator:
 
     def createExcel(self):
         if(self.dlg.checkBox.isChecked()):
-            index = 0
-            image_names = ['Kaart', 'Kadaster', 'Luchtfoto', 'GPS', 'Locatiefoto', 'Loopafstand']
+            screenshot_names = ['Kaart', 'Kadaster', 'Luchtfoto', 'GPS', 'Locatiefoto', 'Loopafstand']
             image_regions = [[400, 350, 1095, 565], [400, 350, 1300, 655], [910, 210, 600, 790], [175, 500, 1000, 387], [300, 150, 1220, 720], [270, 150, 1200, 700]]
             global web_driver
-            for handle in web_driver.web_driver.window_handles:
+            for index, handle in enumerate(web_driver.web_driver.window_handles[:6]):
                 web_driver.web_driver.switch_to.window(handle)
-                time.sleep(0.5)
-                pyscreeze.screenshot(f"{self.file_location}\\Dependencies\\{image_names[index]}.png", image_regions[index])
-                index += 1
+                time.sleep(2.0)
+                pyscreeze.screenshot(f"{self.file_location}\\Dependencies\\{screenshot_names[index]}.png", image_regions[index])
 
         fractions = ["Rest", "GFT", "PMD", "Papier", "Glas", "Textiel"]
         total_containers = {}
@@ -327,34 +327,34 @@ class ProductbladGenerator:
         general_sheet.add_data_validation(data_validation)
         data_validation.add("B33")
 
-        image = []
-        image_index = 0
-        excel_image_places = ['A53', 'E53', 'A68', 'A94', 'A120', 'A201', 'A230', 'A266']
+        deps = f"{self.file_location}\\Dependencies"
+        # Afbeeldingen op naam laden zodat volgorde altijd klopt en Logo.png niet mee wordt genomen
+        screenshot_to_cell = {
+            'GPS':         'A68',
+            'Kadaster':    'A94',
+            'Kaart':       'A120',
+            'Locatiefoto': 'A201',
+            'Luchtfoto':   'A230',
+            'Loopafstand': 'A266',
+        }
+        for name, cell in screenshot_to_cell.items():
+            img_path = f"{deps}\\{name}.png"
+            if os.path.exists(img_path):
+                general_sheet.add_image(Image(img_path), cell)
+            else:
+                print(f'Afbeelding niet gevonden: {img_path}')
 
-        for file in os.listdir(f"{self.file_location}\\Dependencies"):
-            if file.endswith(".png") or file.endswith(".PNG"):
-                image.insert(image_index, Image(f"{self.file_location}\\Dependencies\\{str(file)}"))
-                image_index = image_index + 1
-
-        try:
-            general_sheet.add_image(image[1], excel_image_places[3])
-            general_sheet.add_image(image[2], excel_image_places[6])
-            general_sheet.add_image(image[5], excel_image_places[7])
-            general_sheet.add_image(image[0], excel_image_places[4])
-            general_sheet.add_image(image[3], excel_image_places[2])
-            general_sheet.add_image(image[4], excel_image_places[5])
-            #verkeerssituatie_sheet = workbook[sheets[2]]
-            #verkeerssituatie_sheet.add_image(image[5], 'A1')
-            if(len(image) == 7):
-                general_sheet.add_image(image[6], excel_image_places[0])
-            elif(len(image) == 8):
-                general_sheet.add_image(image[6], excel_image_places[0])
-                general_sheet.add_image(image[7], excel_image_places[1])
-        except IndexError:
-            print('Not all images in Directory\n')
-            pass
-
-        image.clear()
+        # Optionele extra locatiefoto's (niet de vaste screenshots of Logo.png)
+        vaste_namen = set(screenshot_to_cell.keys()) | {'Logo', 'TransLogo'}
+        extra = sorted([
+            f for f in os.listdir(deps)
+            if (f.endswith('.png') or f.endswith('.PNG'))
+            and os.path.splitext(f)[0] not in vaste_namen
+        ])
+        if len(extra) >= 1:
+            general_sheet.add_image(Image(f"{deps}\\{extra[0]}"), 'A53')
+        if len(extra) >= 2:
+            general_sheet.add_image(Image(f"{deps}\\{extra[1]}"), 'E53')
 
         workbook.save(f"{self.file_location}\\Dependencies\\{self.location_code}.xlsm")
         app = xw.App(visible=False)

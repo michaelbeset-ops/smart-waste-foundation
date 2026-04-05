@@ -2,7 +2,9 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium import webdriver
+import time
 
 
 class WebDriver:
@@ -10,20 +12,31 @@ class WebDriver:
         try:
             options = webdriver.ChromeOptions()
             options.add_argument('--start-maximized')
-            options.add_argument('--incognito')
             options.add_experimental_option('excludeSwitches', ['enable-automation'])
             options.add_experimental_option('useAutomationExtension', False)
             service = Service(executable_path=driver_path)
             self.web_driver = webdriver.Chrome(service=service, options=options)
             self.web_driver.get(starting_url)
+            self._wait_for_page_load()
         except Exception as e:
             print(f'Could not initialize web driver: {e}')
 
-    def new_tab(self, url: str):
+    def _wait_for_page_load(self, timeout: int = 30):
+        try:
+            WebDriverWait(self.web_driver, timeout).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
+            )
+        except Exception:
+            pass
+
+    def new_tab(self, url: str, extra_wait: float = 1.0):
         try:
             self.web_driver.execute_script('window.open();')
             self.web_driver.switch_to.window(self.web_driver.window_handles[-1])
             self.web_driver.get(url)
+            self._wait_for_page_load()
+            if extra_wait > 0:
+                time.sleep(extra_wait)
         except Exception as e:
             print(f'Could not open a new tab with the given url: {url} - {e}')
 
