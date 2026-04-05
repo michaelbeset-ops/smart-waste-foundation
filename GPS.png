@@ -1,0 +1,44 @@
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.keys import Keys
+from selenium import webdriver
+
+class ChromeDriver:
+    def __init__(self):
+        self.driver = ChromeDriverManager(log_level=0, print_first_line=False).install()
+
+class WebDriver:
+    def __init__(self, driver, staring_url : str):
+        try:
+            chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_argument('--start-maximized')
+            chrome_options.add_argument("--incognito")
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+
+            self.web_driver = webdriver.Chrome(driver, options=chrome_options)
+            self.web_driver.get(staring_url)
+        except:
+            print("Could not initialize web driver")
+
+    def new_tab(self, url : str):
+        try:
+            self.web_driver.execute_script("window.open();")
+            self.web_driver.switch_to.window(self.web_driver.window_handles[-1])
+            self.web_driver.get(url)
+        except:
+            print(f"Could not open a new tab with the given url: {url}")
+
+    def new_search(self, item_id : str, search : str):
+        try:
+            search_bar = self.web_driver.find_element_by_id(item_id)
+            search_bar.clear()
+            search_bar.send_keys(search)
+            search_bar.send_keys(Keys.RETURN)
+        except:
+            print(f"Could not find specified web item: {item_id}")
+
+    def __del__(self):
+        try:
+            self.web_driver.quit()
+        except:
+            print("Could not close the web driver")
