@@ -373,21 +373,28 @@ class App(tk.Tk):
             if len(extra) >= 2:
                 add_image_to_range(general_sheet, os.path.join(DEPS, extra[1]), 'E53', 'H65')
 
-            # Opslaan en macro uitvoeren
-            out_xlsm = os.path.join(DEPS, f"{self.location_code}.xlsm")
-            out_xlsx = os.path.join(DEPS, f"{self.location_code}.xlsx")
+            # Opslaan
+            # Verwijder tekens die niet geldig zijn in bestandsnamen
+            veilige_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
+            out_xlsm = os.path.join(DEPS, f"{veilige_code}.xlsm")
+            out_xlsx = os.path.join(DEPS, f"{veilige_code}.xlsx")
             workbook.save(out_xlsm)
 
-            app = xw.App(visible=False)
-            wb  = app.books.open(out_xlsm)
-            wb.macro("Module1.MoveAndSizeWithCells")()
-            wb.save(out_xlsx)
-            wb.app.quit()
+            # Probeer macro via xlwings, sla anders direct op als xlsx
+            try:
+                app = xw.App(visible=False)
+                wb  = app.books.open(out_xlsm)
+                wb.macro("Module1.MoveAndSizeWithCells")()
+                wb.save(out_xlsx)
+                wb.app.quit()
+            except Exception:
+                # Fallback: sla direct op als xlsx (afbeeldingen zijn al correct geplaatst)
+                workbook.save(out_xlsx)
 
             if os.path.exists(out_xlsm):
                 os.remove(out_xlsm)
 
-            self._status(f"Klaar! Bestand: {self.location_code}.xlsx")
+            self._status(f"Klaar! Bestand: {veilige_code}.xlsx")
             messagebox.showinfo("Klaar", f"Excel aangemaakt:\n{out_xlsx}")
 
         except Exception as e:
