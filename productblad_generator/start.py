@@ -422,7 +422,7 @@ class App(tk.Tk):
             if os.path.isdir(KLIC):
                 for f in os.listdir(KLIC):
                     name_lower = os.path.splitext(f)[0].lower()
-                    if name_lower == klic_code.lower() and f.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    if name_lower.startswith(klic_code.lower()) and f.lower().endswith(('.png', '.jpg', '.jpeg')):
                         klic_bestand = os.path.join(KLIC, f)
                         break
             if klic_bestand:
