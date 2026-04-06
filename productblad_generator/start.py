@@ -250,11 +250,11 @@ class App(tk.Tk):
             self.web_driver.new_search("ggcSearchInputId", target_address)
             self.google_url = f"https://www.google.nl/maps/place/{target_address}/data=!3m1!1e3"
             self.web_driver.new_tab(self.google_url, extra_wait=2.0)
-            self.web_driver.new_tab("https://www.gpscoordinaten.nl/converteer-gps-coordinaten.php", extra_wait=1.5)
+            self.web_driver.new_tab("https://www.gpscoordinaten.nl/converteer-gps-coordinaten.php", extra_wait=2.5)
             self.web_driver.new_search("a-latlong", coords)
             joined = coords.replace(" ", "")
             self.web_driver.new_tab(f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={joined}", extra_wait=2.0)
-            self.web_driver.new_tab("https://afstandmeten.nl/", extra_wait=2.0)
+            self.web_driver.new_tab("https://afstandmeten.nl/", extra_wait=3.0)
             self.web_driver.new_search("qId", target_address)
             self._status("Websites geopend. Pas screenshots aan en klik op 'Maak Excel'.")
         except Exception as e:
@@ -309,6 +309,29 @@ class App(tk.Tk):
             general_sheet = workbook[sheets[1]]
 
             info_sheet['D2'] = f"Gemeente: {self.cb_opdrachtgever.get()}"
+
+            # Container nummers invullen (bijv. "1 OOC Rest", "2 OOC GFT")
+            fracties = ["Rest", "GFT", "PMD", "Papier", "Glas", "Textiel"]
+
+            bestaand_rij = 3
+            teller_b = 1
+            for fractie in fracties:
+                sb_b, _ = self.spinboxes[fractie]
+                for _ in range(int(sb_b.get())):
+                    if bestaand_rij <= 7:
+                        info_sheet[f'B{bestaand_rij}'] = f"{teller_b} OOC {fractie}"
+                        bestaand_rij += 1
+                        teller_b += 1
+
+            nieuw_rij = 9
+            teller_n = 1
+            for fractie in fracties:
+                _, sb_n = self.spinboxes[fractie]
+                for _ in range(int(sb_n.get())):
+                    if nieuw_rij <= 13:
+                        info_sheet[f'B{nieuw_rij}'] = f"{teller_n} OOC {fractie}"
+                        nieuw_rij += 1
+                        teller_n += 1
 
             # Loopafstand
             loopafstand = self.e_loopafstand.get().replace(",", ".")
