@@ -5,7 +5,7 @@ echo ================================================
 echo.
 echo Pakketten installeren... even geduld...
 echo.
-python -m pip install selenium openpyxl pyproj xlwings pyscreeze
+python -m pip install selenium openpyxl pyproj xlwings pyscreeze webdriver-manager
 echo.
 echo ================================================
 echo  Klaar! Je kunt nu 2_start.bat gebruiken.

@@ -9,17 +9,23 @@ import time
 
 class WebDriver:
     def __init__(self, driver_path: str, starting_url: str):
+        options = webdriver.ChromeOptions()
+        options.add_argument('--start-maximized')
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
+
+        # Probeer eerst webdriver-manager (downloadt automatisch de juiste versie)
         try:
-            options = webdriver.ChromeOptions()
-            options.add_argument('--start-maximized')
-            options.add_experimental_option('excludeSwitches', ['enable-automation'])
-            options.add_experimental_option('useAutomationExtension', False)
+            from webdriver_manager.chrome import ChromeDriverManager
+            service = Service(ChromeDriverManager().install())
+        except Exception:
+            # Fallback: gebruik meegeleverde chromedriver.exe
             service = Service(executable_path=driver_path)
-            self.web_driver = webdriver.Chrome(service=service, options=options)
-            self.web_driver.get(starting_url)
-            self._wait_for_page_load()
-        except Exception as e:
-            print(f'Could not initialize web driver: {e}')
+
+        # Geen try/except hier zodat fouten zichtbaar zijn in de GUI
+        self.web_driver = webdriver.Chrome(service=service, options=options)
+        self.web_driver.get(starting_url)
+        self._wait_for_page_load()
 
     def _wait_for_page_load(self, timeout: int = 30):
         try:
@@ -30,15 +36,12 @@ class WebDriver:
             pass
 
     def new_tab(self, url: str, extra_wait: float = 1.0):
-        try:
-            self.web_driver.execute_script('window.open();')
-            self.web_driver.switch_to.window(self.web_driver.window_handles[-1])
-            self.web_driver.get(url)
-            self._wait_for_page_load()
-            if extra_wait > 0:
-                time.sleep(extra_wait)
-        except Exception as e:
-            print(f'Could not open a new tab with the given url: {url} - {e}')
+        self.web_driver.execute_script('window.open();')
+        self.web_driver.switch_to.window(self.web_driver.window_handles[-1])
+        self.web_driver.get(url)
+        self._wait_for_page_load()
+        if extra_wait > 0:
+            time.sleep(extra_wait)
 
     def new_search(self, item_id: str, search: str):
         try:
@@ -53,4 +56,4 @@ class WebDriver:
         try:
             self.web_driver.quit()
         except Exception:
-            print('Could not close the web driver')
+            pass
