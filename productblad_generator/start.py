@@ -16,6 +16,21 @@ def load_data():
         return json.load(f)
 
 
+def set_cell(sheet, cell_ref, value):
+    """Schrijf naar een cel, ook als die deel uitmaakt van een samengevoegde reeks."""
+    from openpyxl.utils import column_index_from_string
+    col_str = re.match(r'([A-Z]+)', cell_ref.upper()).group(1)
+    row = int(re.match(r'[A-Z]+(\d+)', cell_ref.upper()).group(1))
+    col = column_index_from_string(col_str)
+    for merged in sheet.merged_cells.ranges:
+        if (merged.min_row <= row <= merged.max_row and
+                merged.min_col <= col <= merged.max_col):
+            # Schrijf naar de top-left cel van de merge
+            sheet.cell(row=merged.min_row, column=merged.min_col).value = value
+            return
+    sheet[cell_ref] = value
+
+
 def add_image_to_range(sheet, img_path, from_cell, to_cell):
     from openpyxl.drawing.spreadsheet_drawing import TwoCellAnchor, AnchorMarker
     from openpyxl.utils import column_index_from_string
@@ -314,7 +329,7 @@ class App(tk.Tk):
             info_sheet    = workbook[sheets[0]]
             general_sheet = workbook[sheets[1]]
 
-            info_sheet['D2'] = f"Gemeente: {self.cb_opdrachtgever.get()}"
+            set_cell(info_sheet, 'D2', f"Gemeente: {self.cb_opdrachtgever.get()}")
 
             # Container nummers invullen (bijv. "1 OOC Rest", "2 OOC GFT")
             fracties = ["Rest", "GFT", "PMD", "Papier", "Glas", "Textiel"]
@@ -325,7 +340,7 @@ class App(tk.Tk):
                 sb_b, _ = self.spinboxes[fractie]
                 for _ in range(int(sb_b.get())):
                     if bestaand_rij <= 7:
-                        info_sheet[f'B{bestaand_rij}'] = f"{teller_b} OOC {fractie}"
+                        set_cell(info_sheet, f'B{bestaand_rij}', f"{teller_b} OOC {fractie}")
                         bestaand_rij += 1
                         teller_b += 1
 
@@ -335,7 +350,7 @@ class App(tk.Tk):
                 _, sb_n = self.spinboxes[fractie]
                 for _ in range(int(sb_n.get())):
                     if nieuw_rij <= 13:
-                        info_sheet[f'B{nieuw_rij}'] = f"{teller_n} OOC {fractie}"
+                        set_cell(info_sheet, f'B{nieuw_rij}', f"{teller_n} OOC {fractie}")
                         nieuw_rij += 1
                         teller_n += 1
 
@@ -343,31 +358,30 @@ class App(tk.Tk):
             loopafstand = self.e_loopafstand.get().replace(",", ".")
             if loopafstand:
                 ld = float(loopafstand)
-                general_sheet['C15'] = '<50 m' if ld < 50 else f"{int(ld)} m"
+                set_cell(general_sheet, 'C15', '<50 m' if ld < 50 else f"{int(ld)} m")
 
-            general_sheet['G15'] = f"{self.e_huishoudens.get()} hh"
+            set_cell(general_sheet, 'G15', f"{self.e_huishoudens.get()} hh")
 
             # Coordinaten
             coords_raw = self.e_coordinaten.get()
             coords = coords_raw.split(",")
-            general_sheet['C17'] = coords[0].strip()[:8]
-            general_sheet['E17'] = coords[1].strip()[:8]
+            set_cell(general_sheet, 'C17', coords[0].strip()[:8])
+            set_cell(general_sheet, 'E17', coords[1].strip()[:8])
 
             transformer = Transformer.from_crs("epsg:4326", "epsg:28992", always_xy=True)
             x_rd, y_rd = transformer.transform(float(coords[0].strip()), float(coords[1].strip()))
-            general_sheet['C16'] = x_rd
-            general_sheet['E16'] = y_rd
+            set_cell(general_sheet, 'C16', x_rd)
+            set_cell(general_sheet, 'E16', y_rd)
 
             # Adres
-            general_sheet['B19'] = self.e_straat.get()
-            general_sheet['B20'] = self.e_postcode.get()
-            general_sheet['B21'] = self.cb_wijk.get()
-            general_sheet['F19'] = f"{self.e_huisnummer.get()}{self.e_toevoeging.get()}"
-            general_sheet['F20'] = self.cb_plaats.get()
-            general_sheet['F21'] = f'=HYPERLINK("{self.google_url}", "Google")'
-            general_sheet['F21'].style = "Hyperlink"
-            general_sheet['B42'] = self.e_opmerkingen.get()
-            general_sheet['B31'] = 'Hoogbouw in orde'
+            set_cell(general_sheet, 'B19', self.e_straat.get())
+            set_cell(general_sheet, 'B20', self.e_postcode.get())
+            set_cell(general_sheet, 'B21', self.cb_wijk.get())
+            set_cell(general_sheet, 'F19', f"{self.e_huisnummer.get()}{self.e_toevoeging.get()}")
+            set_cell(general_sheet, 'F20', self.cb_plaats.get())
+            set_cell(general_sheet, 'F21', f'=HYPERLINK("{self.google_url}", "Google")')
+            set_cell(general_sheet, 'B42', self.e_opmerkingen.get())
+            set_cell(general_sheet, 'B31', 'Hoogbouw in orde')
 
             # Data validaties
             dv1 = DataValidation(type="list", formula1="=Data!$A$1:$A$4")
