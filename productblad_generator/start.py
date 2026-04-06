@@ -297,8 +297,8 @@ class App(tk.Tk):
             huisnr = self.e_huisnummer.get()
             self.location_code = f"{pc_letters}{huisnr} - {straat}"
 
-            veilige_code     = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
-            veilige_gemeente = re.sub(r'[\\/*?:"<>|]', '_', self.cb_plaats.get())
+            veilige_code     = re.sub(r'[\\/*?:"<>|]', '_', self.location_code).strip()
+            veilige_gemeente = re.sub(r'[\\/*?:"<>|]', '_', self.cb_plaats.get()).strip()
             self.output_dir  = os.path.join(FILE_LOCATION, "Pythonwerk", veilige_gemeente, veilige_code)
             os.makedirs(self.output_dir, exist_ok=True)
 
@@ -443,7 +443,7 @@ class App(tk.Tk):
         if not self.location_code or not hasattr(self, 'output_dir'):
             messagebox.showwarning("Let op", "Eerst Excel aanmaken.")
             return
-        veilige_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
+        veilige_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code).strip()
         path = os.path.join(self.output_dir, f"{veilige_code}.xlsm")
         if os.path.exists(path):
             os.startfile(path)
