@@ -270,7 +270,6 @@ class App(tk.Tk):
             from openpyxl.worksheet.datavalidation import DataValidation
             from openpyxl import load_workbook
             from pyproj import Transformer
-            import xlwings as xw
             import pyscreeze
 
             # Screenshots
@@ -373,26 +372,10 @@ class App(tk.Tk):
             if len(extra) >= 2:
                 add_image_to_range(general_sheet, os.path.join(DEPS, extra[1]), 'E53', 'H65')
 
-            # Opslaan
-            # Verwijder tekens die niet geldig zijn in bestandsnamen
+            # Opslaan — verwijder tekens die niet geldig zijn in bestandsnamen
             veilige_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
-            out_xlsm = os.path.join(DEPS, f"{veilige_code}.xlsm")
             out_xlsx = os.path.join(DEPS, f"{veilige_code}.xlsx")
-            workbook.save(out_xlsm)
-
-            # Probeer macro via xlwings, sla anders direct op als xlsx
-            try:
-                app = xw.App(visible=False)
-                wb  = app.books.open(out_xlsm)
-                wb.macro("Module1.MoveAndSizeWithCells")()
-                wb.save(out_xlsx)
-                wb.app.quit()
-            except Exception:
-                # Fallback: sla direct op als xlsx (afbeeldingen zijn al correct geplaatst)
-                workbook.save(out_xlsx)
-
-            if os.path.exists(out_xlsm):
-                os.remove(out_xlsm)
+            workbook.save(out_xlsx)
 
             self._status(f"Klaar! Bestand: {veilige_code}.xlsx")
             messagebox.showinfo("Klaar", f"Excel aangemaakt:\n{out_xlsx}")
