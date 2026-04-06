@@ -415,11 +415,11 @@ class App(tk.Tk):
             if len(extra) >= 2:
                 add_image_to_range(general_sheet, os.path.join(self.output_dir, extra[1]), 'E53', 'H65')
 
-            # Opslaan in output map
-            out_xlsx = os.path.join(self.output_dir, f"{veilige_code}.xlsx")
+            # Opslaan in output map (als .xlsm om VBA te behouden)
+            out_xlsx = os.path.join(self.output_dir, f"{veilige_code}.xlsm")
             workbook.save(out_xlsx)
 
-            self._status(f"Klaar! Bestand: {veilige_code}.xlsx")
+            self._status(f"Klaar! Bestand: {veilige_code}.xlsm")
             messagebox.showinfo("Klaar", f"Excel aangemaakt:\n{out_xlsx}")
 
         except Exception as e:
@@ -431,7 +431,7 @@ class App(tk.Tk):
             messagebox.showwarning("Let op", "Eerst Excel aanmaken.")
             return
         veilige_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
-        path = os.path.join(self.output_dir, f"{veilige_code}.xlsx")
+        path = os.path.join(self.output_dir, f"{veilige_code}.xlsm")
         if os.path.exists(path):
             os.startfile(path)
         else:
