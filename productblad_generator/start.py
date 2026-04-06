@@ -304,23 +304,26 @@ class App(tk.Tk):
 
             # Screenshots
             if self.chk_screenshots_var.get() and self.web_driver:
-                screenshot_names  = ['Kaart', 'Kadaster', 'Luchtfoto', 'GPS', 'Locatiefoto', 'Loopafstand']
-                image_regions     = [
-                    [400, 350, 1095, 565],
-                    [400, 350, 1300, 655],
-                    [910, 210,  600, 790],
-                    [175, 500, 1000, 387],
-                    [300, 150, 1220, 720],
-                    [270, 150, 1200, 700],
-                ]
-                handles = self.web_driver.web_driver.window_handles[:6]
-                for index, handle in enumerate(handles):
-                    self.web_driver.web_driver.switch_to.window(handle)
-                    time.sleep(2.0)
-                    pyscreeze.screenshot(
-                        os.path.join(self.output_dir, f"{screenshot_names[index]}.png"),
-                        image_regions[index]
-                    )
+                try:
+                    screenshot_names  = ['Kaart', 'Kadaster', 'Luchtfoto', 'GPS', 'Locatiefoto', 'Loopafstand']
+                    image_regions     = [
+                        [400, 350, 1095, 565],
+                        [400, 350, 1300, 655],
+                        [910, 210,  600, 790],
+                        [175, 500, 1000, 387],
+                        [300, 150, 1220, 720],
+                        [270, 150, 1200, 700],
+                    ]
+                    handles = self.web_driver.web_driver.window_handles[:6]
+                    for index, handle in enumerate(handles):
+                        self.web_driver.web_driver.switch_to.window(handle)
+                        time.sleep(2.0)
+                        pyscreeze.screenshot(
+                            os.path.join(self.output_dir, f"{screenshot_names[index]}.png"),
+                            image_regions[index]
+                        )
+                except Exception:
+                    self._status("Browser niet beschikbaar — screenshots overgeslagen.")
 
             # Workbook laden
             wb_path = os.path.join(DEPS, "PythonWerkProjectblad.xlsm")
