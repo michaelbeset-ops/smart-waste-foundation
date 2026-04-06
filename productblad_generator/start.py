@@ -45,6 +45,7 @@ class App(tk.Tk):
         self.web_driver = None
         self.google_url = ""
         self.location_code = None
+        self.output_dir = None
         self._build()
         self._fill_opdrachtgevers()
 
@@ -272,6 +273,19 @@ class App(tk.Tk):
             from pyproj import Transformer
             import pyscreeze
 
+            # Locatie code (berekenen vóór screenshots, zodat we de map al klaar hebben)
+            postcode = self.e_postcode.get()
+            letters = re.findall(r'\D+', postcode)
+            pc_letters = letters[0] if letters else postcode
+            straat = self.e_straat.get()
+            huisnr = self.e_huisnummer.get()
+            self.location_code = f"{pc_letters}{huisnr} - {straat}"
+
+            veilige_code     = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
+            veilige_gemeente = re.sub(r'[\\/*?:"<>|]', '_', self.cb_plaats.get())
+            self.output_dir  = os.path.join(FILE_LOCATION, "Pythonwerk", veilige_gemeente, veilige_code)
+            os.makedirs(self.output_dir, exist_ok=True)
+
             # Screenshots
             if self.chk_screenshots_var.get() and self.web_driver:
                 screenshot_names  = ['Kaart', 'Kadaster', 'Luchtfoto', 'GPS', 'Locatiefoto', 'Loopafstand']
@@ -288,17 +302,9 @@ class App(tk.Tk):
                     self.web_driver.web_driver.switch_to.window(handle)
                     time.sleep(2.0)
                     pyscreeze.screenshot(
-                        os.path.join(DEPS, f"{screenshot_names[index]}.png"),
+                        os.path.join(self.output_dir, f"{screenshot_names[index]}.png"),
                         image_regions[index]
                     )
-
-            # Locatie code
-            postcode = self.e_postcode.get()
-            letters = re.findall(r'\D+', postcode)
-            pc_letters = letters[0] if letters else postcode
-            straat = self.e_straat.get()
-            huisnr = self.e_huisnummer.get()
-            self.location_code = f"{pc_letters}{huisnr} - {straat}"
 
             # Workbook laden
             wb_path = os.path.join(DEPS, "PythonWerkProjectblad.xlsm")
@@ -381,23 +387,22 @@ class App(tk.Tk):
                 'Luchtfoto':   ('A267', 'H326'),
             }
             for name, (fc, tc) in screenshot_to_range.items():
-                img_path = os.path.join(DEPS, f"{name}.png")
+                img_path = os.path.join(self.output_dir, f"{name}.png")
                 if os.path.exists(img_path):
                     add_image_to_range(general_sheet, img_path, fc, tc)
 
             vaste = set(screenshot_to_range.keys()) | {'Logo', 'TransLogo'}
             extra = sorted([
-                f for f in os.listdir(DEPS)
+                f for f in os.listdir(self.output_dir)
                 if f.lower().endswith('.png') and os.path.splitext(f)[0] not in vaste
             ])
             if len(extra) >= 1:
-                add_image_to_range(general_sheet, os.path.join(DEPS, extra[0]), 'A53', 'D65')
+                add_image_to_range(general_sheet, os.path.join(self.output_dir, extra[0]), 'A53', 'D65')
             if len(extra) >= 2:
-                add_image_to_range(general_sheet, os.path.join(DEPS, extra[1]), 'E53', 'H65')
+                add_image_to_range(general_sheet, os.path.join(self.output_dir, extra[1]), 'E53', 'H65')
 
-            # Opslaan — verwijder tekens die niet geldig zijn in bestandsnamen
-            veilige_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
-            out_xlsx = os.path.join(DEPS, f"{veilige_code}.xlsx")
+            # Opslaan in output map
+            out_xlsx = os.path.join(self.output_dir, f"{veilige_code}.xlsx")
             workbook.save(out_xlsx)
 
             self._status(f"Klaar! Bestand: {veilige_code}.xlsx")
@@ -408,10 +413,11 @@ class App(tk.Tk):
             self._status("Fout bij aanmaken Excel.")
 
     def _open_excel(self):
-        if not self.location_code:
+        if not self.location_code or not hasattr(self, 'output_dir'):
             messagebox.showwarning("Let op", "Eerst Excel aanmaken.")
             return
-        path = os.path.join(DEPS, f"{self.location_code}.xlsx")
+        veilige_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code)
+        path = os.path.join(self.output_dir, f"{veilige_code}.xlsx")
         if os.path.exists(path):
             os.startfile(path)
         else:
