@@ -9,6 +9,7 @@ import threading
 
 FILE_LOCATION = os.path.dirname(os.path.realpath(__file__))
 DEPS = os.path.join(FILE_LOCATION, "Dependencies")
+KLIC = os.path.join(FILE_LOCATION, "KLIC")
 
 
 def load_data():
@@ -414,6 +415,18 @@ class App(tk.Tk):
                 add_image_to_range(general_sheet, os.path.join(self.output_dir, extra[0]), 'A53', 'D65')
             if len(extra) >= 2:
                 add_image_to_range(general_sheet, os.path.join(self.output_dir, extra[1]), 'E53', 'H65')
+
+            # KLIC afbeelding zoeken op locatiecode
+            klic_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code).split(' - ')[0].strip()
+            klic_bestand = None
+            if os.path.isdir(KLIC):
+                for f in os.listdir(KLIC):
+                    name_lower = os.path.splitext(f)[0].lower()
+                    if name_lower == klic_code.lower() and f.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        klic_bestand = os.path.join(KLIC, f)
+                        break
+            if klic_bestand:
+                add_image_to_range(general_sheet, klic_bestand, 'A135', 'H184')
 
             # Opslaan in output map (als .xlsm om VBA te behouden)
             out_xlsx = os.path.join(self.output_dir, f"{veilige_code}.xlsm")
