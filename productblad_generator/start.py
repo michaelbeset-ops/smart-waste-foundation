@@ -83,7 +83,18 @@ class App(tk.Tk):
         self.e_huisnummer  = ttk.Entry(f2, width=8);  self.e_huisnummer.grid(row=1, column=1, **pad)
         self.e_toevoeging  = ttk.Entry(f2, width=6);  self.e_toevoeging.grid(row=1, column=2, **pad)
         self.e_postcode    = ttk.Entry(f2, width=10); self.e_postcode.grid(row=1, column=3, **pad)
-        self.e_coordinaten = ttk.Entry(f2, width=30); self.e_coordinaten.grid(row=1, column=4, **pad)
+
+        # Coordinaten veld + knop om automatisch op te halen
+        coord_frame = ttk.Frame(f2)
+        coord_frame.grid(row=1, column=4, **pad)
+        self.e_coordinaten = ttk.Entry(coord_frame, width=26)
+        self.e_coordinaten.pack(side="left")
+        ttk.Button(coord_frame, text="📍", width=3,
+                   command=self._haal_coordinaten).pack(side="left", padx=(2, 0))
+
+        # Auto-ophalen als postcode + huisnummer zijn ingevuld
+        self.e_postcode.bind("<FocusOut>", lambda _: self._auto_coordinaten())
+        self.e_huisnummer.bind("<FocusOut>", lambda _: self._auto_coordinaten())
 
         # --- rij 3: extra info ---
         f3 = ttk.LabelFrame(self, text="Extra")
@@ -135,6 +146,48 @@ class App(tk.Tk):
         self.status_var = tk.StringVar(value="Klaar.")
         ttk.Label(self, textvariable=self.status_var, foreground="gray").grid(
             row=5, column=0, columnspan=2, sticky="w", padx=8, pady=2)
+
+    # ---------------------------------------------------- GPS ophalen ---
+    def _auto_coordinaten(self):
+        """Haal coördinaten automatisch op als postcode en huisnummer zijn ingevuld."""
+        if self.e_postcode.get() and self.e_huisnummer.get() and not self.e_coordinaten.get():
+            threading.Thread(target=self._fetch_coordinaten, daemon=True).start()
+
+    def _haal_coordinaten(self):
+        """Handmatig coördinaten ophalen via de 📍 knop."""
+        self.e_coordinaten.delete(0, tk.END)
+        threading.Thread(target=self._fetch_coordinaten, daemon=True).start()
+
+    def _fetch_coordinaten(self):
+        try:
+            import requests
+            straat    = self.e_straat.get().strip()
+            huisnr    = self.e_huisnummer.get().strip()
+            toev      = self.e_toevoeging.get().strip()
+            postcode  = self.e_postcode.get().strip().replace(" ", "")
+            plaats    = self.cb_plaats.get().strip()
+
+            query = f"{straat} {huisnr}{toev}, {postcode} {plaats}, Nederland"
+            self._status("Coördinaten ophalen...")
+
+            resp = requests.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": query, "format": "json", "limit": 1},
+                headers={"User-Agent": "ProductbladGenerator/1.0"},
+                timeout=10
+            )
+            results = resp.json()
+            if results:
+                lat = results[0]["lat"]
+                lon = results[0]["lon"]
+                coords = f"{lat}, {lon}"
+                self.e_coordinaten.delete(0, tk.END)
+                self.e_coordinaten.insert(0, coords)
+                self._status(f"Coördinaten gevonden: {coords}")
+            else:
+                self._status("Geen coördinaten gevonden — vul handmatig in.")
+        except Exception as e:
+            self._status(f"Coördinaten ophalen mislukt: {e}")
 
     # --------------------------------------------------------- dropdowns ---
     def _fill_opdrachtgevers(self):
