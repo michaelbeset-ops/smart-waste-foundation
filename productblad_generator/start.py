@@ -335,8 +335,9 @@ class App(tk.Tk):
 
             set_cell(info_sheet, 'D2', f"Gemeente: {self.cb_opdrachtgever.get()}")
 
-            # Container nummers invullen (bijv. "1 OOC Rest", "2 OOC GFT")
+            # Container nummers invullen
             fracties = ["Rest", "GFT", "PMD", "Papier", "Glas", "Textiel"]
+            put_waarden = ["PUT", "PUT", "PUT", "Put"]
 
             bestaand_rij = 3
             teller_b = 1
@@ -344,7 +345,12 @@ class App(tk.Tk):
                 sb_b, _ = self.spinboxes[fractie]
                 for _ in range(int(sb_b.get())):
                     if bestaand_rij <= 7:
-                        set_cell(info_sheet, f'B{bestaand_rij}', f"{teller_b} OOC {fractie}")
+                        set_cell(info_sheet, f'A{bestaand_rij}', f"{teller_b} OOC {fractie}")
+                        set_cell(info_sheet, f'B{bestaand_rij}', "OOC........")
+                        set_cell(info_sheet, f'C{bestaand_rij}', "Bouwjaar")
+                        set_cell(info_sheet, f'F{bestaand_rij}', "monolitisch")
+                        for i, put in enumerate(put_waarden):
+                            set_cell(info_sheet, f'E{bestaand_rij + i}', put)
                         bestaand_rij += 1
                         teller_b += 1
 
@@ -354,7 +360,12 @@ class App(tk.Tk):
                 _, sb_n = self.spinboxes[fractie]
                 for _ in range(int(sb_n.get())):
                     if nieuw_rij <= 13:
-                        set_cell(info_sheet, f'B{nieuw_rij}', f"{teller_n} OOC {fractie}")
+                        set_cell(info_sheet, f'A{nieuw_rij}', f"{teller_n} OOC {fractie}")
+                        set_cell(info_sheet, f'B{nieuw_rij}', "OOC........")
+                        set_cell(info_sheet, f'C{nieuw_rij}', "Bouwjaar")
+                        set_cell(info_sheet, f'F{nieuw_rij}', "monolitisch")
+                        for i, put in enumerate(put_waarden):
+                            set_cell(info_sheet, f'E{nieuw_rij + i}', put)
                         nieuw_rij += 1
                         teller_n += 1
 
