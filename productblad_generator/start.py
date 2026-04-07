@@ -287,14 +287,13 @@ class App(tk.Tk):
             from openpyxl.worksheet.datavalidation import DataValidation
             from openpyxl import load_workbook
             from pyproj import Transformer
-            import pyscreeze
 
             # Locatie code (berekenen vóór screenshots, zodat we de map al klaar hebben)
-            postcode = self.e_postcode.get()
+            postcode = self.e_postcode.get().strip()
             letters = re.findall(r'\D+', postcode)
-            pc_letters = letters[0] if letters else postcode
-            straat = self.e_straat.get()
-            huisnr = self.e_huisnummer.get()
+            pc_letters = letters[0].strip() if letters else postcode
+            straat = self.e_straat.get().strip()
+            huisnr = self.e_huisnummer.get().strip()
             self.location_code = f"{pc_letters}{huisnr} - {straat}"
 
             veilige_code     = re.sub(r'[\\/*?:"<>|]', '_', self.location_code).strip()
@@ -305,6 +304,7 @@ class App(tk.Tk):
             # Screenshots
             if self.chk_screenshots_var.get() and self.web_driver:
                 try:
+                    import pyscreeze
                     screenshot_names  = ['Kaart', 'Kadaster', 'Luchtfoto', 'GPS', 'Locatiefoto', 'Loopafstand']
                     image_regions     = [
                         [400, 350, 1095, 565],
@@ -359,23 +359,39 @@ class App(tk.Tk):
                         teller_n += 1
 
             # Loopafstand
-            loopafstand = self.e_loopafstand.get().replace(",", ".")
+            loopafstand = self.e_loopafstand.get().strip().replace(",", ".")
             if loopafstand:
-                ld = float(loopafstand)
-                set_cell(general_sheet, 'C15', '<50 m' if ld < 50 else f"{int(ld)} m")
+                try:
+                    ld = float(loopafstand)
+                    set_cell(general_sheet, 'C15', '<50 m' if ld < 50 else f"{int(ld)} m")
+                except ValueError:
+                    pass
 
             set_cell(general_sheet, 'G15', f"{self.e_huishoudens.get()} hh")
 
-            # Coordinaten
-            coords_raw = self.e_coordinaten.get()
-            coords = coords_raw.split(",")
-            set_cell(general_sheet, 'C17', coords[0].strip()[:8])
-            set_cell(general_sheet, 'E17', coords[1].strip()[:8])
-
-            transformer = Transformer.from_crs("epsg:4326", "epsg:28992", always_xy=True)
-            x_rd, y_rd = transformer.transform(float(coords[0].strip()), float(coords[1].strip()))
-            set_cell(general_sheet, 'C16', x_rd)
-            set_cell(general_sheet, 'E16', y_rd)
+            # Coordinaten — robuuste parser (werkt met elk formaat)
+            coords_raw = self.e_coordinaten.get().strip()
+            if coords_raw:
+                try:
+                    # Haal alle getallen (met decimalen) uit de string
+                    nums = re.findall(r'-?\d+\.\d+', coords_raw)
+                    if len(nums) >= 2:
+                        a, b = float(nums[0]), float(nums[1])
+                        # Nederland: lat 50-54, lon 3-8
+                        if 50 <= a <= 54 and 3 <= b <= 8:
+                            lat, lon = a, b
+                        elif 50 <= b <= 54 and 3 <= a <= 8:
+                            lat, lon = b, a
+                        else:
+                            lat, lon = a, b
+                        set_cell(general_sheet, 'C17', str(lat)[:10])
+                        set_cell(general_sheet, 'E17', str(lon)[:10])
+                        transformer = Transformer.from_crs("epsg:4326", "epsg:28992", always_xy=True)
+                        x_rd, y_rd = transformer.transform(lon, lat)
+                        set_cell(general_sheet, 'C16', round(x_rd))
+                        set_cell(general_sheet, 'E16', round(y_rd))
+                except Exception:
+                    pass
 
             # Adres
             set_cell(general_sheet, 'B19', self.e_straat.get())
@@ -383,7 +399,8 @@ class App(tk.Tk):
             set_cell(general_sheet, 'B21', self.cb_wijk.get())
             set_cell(general_sheet, 'F19', f"{self.e_huisnummer.get()}{self.e_toevoeging.get()}")
             set_cell(general_sheet, 'F20', self.cb_plaats.get())
-            set_cell(general_sheet, 'F21', f'=HYPERLINK("{self.google_url}", "Google")')
+            if self.google_url:
+                set_cell(general_sheet, 'F21', f'=HYPERLINK("{self.google_url}", "Google")')
             set_cell(general_sheet, 'B42', self.e_opmerkingen.get())
             set_cell(general_sheet, 'B31', 'Hoogbouw in orde')
 
@@ -420,7 +437,7 @@ class App(tk.Tk):
                 add_image_to_range(general_sheet, os.path.join(self.output_dir, extra[1]), 'E53', 'H65')
 
             # KLIC afbeelding zoeken op locatiecode
-            klic_code = re.sub(r'[\\/*?:"<>|]', '_', self.location_code).split(' - ')[0].strip()
+            klic_code = veilige_code.split(' - ')[0].strip()
             klic_bestand = None
             if os.path.isdir(KLIC):
                 for f in os.listdir(KLIC):
@@ -439,7 +456,8 @@ class App(tk.Tk):
             messagebox.showinfo("Klaar", f"Excel aangemaakt:\n{out_xlsx}")
 
         except Exception as e:
-            messagebox.showerror("Fout", f"Excel kon niet worden aangemaakt:\n{e}")
+            import traceback
+            messagebox.showerror("Fout", f"Excel kon niet worden aangemaakt:\n{e}\n\n{traceback.format_exc()}")
             self._status("Fout bij aanmaken Excel.")
 
     def _open_excel(self):
