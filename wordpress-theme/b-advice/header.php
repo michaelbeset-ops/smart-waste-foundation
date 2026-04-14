@@ -57,8 +57,9 @@
         ?>
       </nav>
 
-      <!-- Login button (desktop) -->
-      <div class="ba-nav-login">
+      <!-- Cart + Login button (desktop) -->
+      <div class="ba-nav-actions">
+        <?php echo ba_cart_link(); ?>
         <a href="https://b-organized.info/login" target="_blank" rel="noopener noreferrer" class="ba-btn-login">
           Login B-Organized
           <?php echo ba_icon( 'arrow-right', 16 ); ?>
@@ -106,9 +107,12 @@
             echo '</ul>';
         }
         ?>
-        <a href="https://b-organized.info/login" target="_blank" rel="noopener noreferrer" class="ba-btn-login ba-btn-login">
-          Login B-Organized <?php echo ba_icon( 'arrow-right', 16 ); ?>
-        </a>
+        <div class="ba-mobile-bottom-actions">
+          <?php echo ba_cart_link(); ?>
+          <a href="https://b-organized.info/login" target="_blank" rel="noopener noreferrer" class="ba-btn-login">
+            Login B-Organized <?php echo ba_icon( 'arrow-right', 16 ); ?>
+          </a>
+        </div>
       </nav>
     </div>
   </div>
