@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShoppingCart } from "lucide-react";
+import logo from "@/assets/logo.svg";
 
 const navItems = [
-  { label: "Over ons", href: "/over-ons" },
+  { label: "Home", href: "/" },
   { label: "Diensten", href: "/diensten" },
+  { label: "Producten", href: "/producten" },
   { label: "B-Organized", href: "/b-organized" },
-  { label: "Bestellingen", href: "/bestellingen" },
   { label: "Nieuws", href: "/nieuws" },
   { label: "Contact", href: "/contact" },
 ];
@@ -31,18 +32,26 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-navy shadow-lg py-2"
-          : "bg-navy/95 py-4"
+          : "bg-transparent py-4"
       }`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="font-heading text-2xl font-bold text-primary-foreground tracking-tight">
+        {/* Logo + brand name */}
+        <Link to="/" className="flex items-center gap-2.5 shrink-0">
+          <img
+            src={logo}
+            alt="B-Advice logo"
+            className="h-9 w-9"
+            width={36}
+            height={36}
+          />
+          <span className="font-heading text-2xl font-bold text-white tracking-tight">
             B-Advice
           </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1 mx-4">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -50,7 +59,7 @@ const Navbar = () => {
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 location.pathname === item.href
                   ? "text-accent"
-                  : "text-primary-foreground/80 hover:text-primary-foreground"
+                  : "text-white/80 hover:text-white"
               }`}
             >
               {item.label}
@@ -58,21 +67,29 @@ const Navbar = () => {
           ))}
         </nav>
 
-        <div className="hidden lg:block">
+        {/* Desktop: Login button + cart */}
+        <div className="hidden lg:flex items-center gap-2 shrink-0">
           <a
             href="https://b-organized.info/login"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-green hover:bg-green-dark text-accent-foreground px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+            className="inline-flex items-center gap-2 bg-green hover:bg-green-dark text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
           >
             Login B-Organized
           </a>
+          <Link
+            to="/bestellingen"
+            aria-label="Winkelwagen"
+            className="text-white/80 hover:text-white p-2 transition-colors"
+          >
+            <ShoppingCart size={22} />
+          </Link>
         </div>
 
         {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden text-primary-foreground p-2"
+          className="lg:hidden text-white p-2"
           aria-label="Menu openen"
         >
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -90,7 +107,7 @@ const Navbar = () => {
                 className={`px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                   location.pathname === item.href
                     ? "text-accent bg-navy-light"
-                    : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-navy-light"
+                    : "text-white/80 hover:text-white hover:bg-navy-light"
                 }`}
               >
                 {item.label}
@@ -100,10 +117,17 @@ const Navbar = () => {
               href="https://b-organized.info/login"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-green hover:bg-green-dark text-accent-foreground px-5 py-3 rounded-lg text-sm font-semibold transition-colors mt-2"
+              className="inline-flex items-center justify-center gap-2 bg-green hover:bg-green-dark text-white px-5 py-3 rounded-lg text-sm font-semibold transition-colors mt-2"
             >
               Login B-Organized
             </a>
+            <Link
+              to="/bestellingen"
+              className="inline-flex items-center justify-center gap-2 text-white/80 hover:text-white hover:bg-navy-light px-4 py-3 rounded-md text-sm font-medium transition-colors"
+            >
+              <ShoppingCart size={18} />
+              Winkelwagen
+            </Link>
           </nav>
         </div>
       )}

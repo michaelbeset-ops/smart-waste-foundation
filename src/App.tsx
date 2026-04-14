@@ -10,6 +10,7 @@ import BOrganized from "./pages/BOrganized";
 import Bestellingen from "./pages/Bestellingen";
 import Nieuws from "./pages/Nieuws";
 import Contact from "./pages/Contact";
+import Producten from "./pages/Producten";
 import NotFound from "./pages/NotFound";
 import Privacybeleid from "./pages/Privacybeleid";
 import Cookiebeleid from "./pages/Cookiebeleid";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/bestellingen" element={<Bestellingen />} />
             <Route path="/nieuws" element={<Nieuws />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/producten" element={<Producten />} />
             <Route path="/privacybeleid" element={<Privacybeleid />} />
             <Route path="/cookiebeleid" element={<Cookiebeleid />} />
             <Route path="*" element={<NotFound />} />
